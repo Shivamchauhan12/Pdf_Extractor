@@ -1,6 +1,33 @@
 const { PDFDocument } = require('pdf-lib');
 const path = require('path');
 const fs = require('fs');
+// Function to parse page ranges like "1-3,5,7"
+function parsePageRanges(input, totalPages) {
+    const pages = new Set(); // Use Set to avoid duplicates
+    const parts = input.split(',');
+
+    for (const part of parts) {
+        if (part.includes('-')) {
+            // Handle range, e.g., "1-3"
+            const [start, end] = part.split('-').map(Number);
+            if (isNaN(start) || isNaN(end) || start < 1 || end > totalPages || start > end) {
+                throw new Error(`Invalid page range: ${part}`);
+            }
+            for (let i = start; i <= end; i++) {
+                pages.add(i - 1); // Convert to 0-based index
+            }
+        } else {
+            // Handle individual page, e.g., "5"
+            const page = parseInt(part, 10);
+            if (isNaN(page) || page < 1 || page > totalPages) {
+                throw new Error(`Invalid page number: ${part}`);
+            }
+            pages.add(page - 1); // Convert to 0-based index
+        }
+    }
+
+    return Array.from(pages); // Convert Set to Array
+}
 
  
 
