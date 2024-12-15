@@ -1,125 +1,124 @@
 import React, { useRef, useState } from 'react';
 import axios from 'axios';
- 
+import SpinnerOverlay from '../Common/Spinner'; // Import the SpinnerOverlay component
+
 const Main = () => {
-    const [file, setFile] = useState(null);
-    const [pageNumber, setPageNumber] = useState('');
-    const [downloadLink, setDownloadLink] = useState('');
-    const [error, setError] = useState('');
-    const [showPreview, setShowPreview] = useState(false); // State to handle the preview visibility
-    const fileRef = useRef();
+  const [file, setFile] = useState(null);
+  const [pageNumber, setPageNumber] = useState('');
+  const [downloadLink, setDownloadLink] = useState('');
+  const [error, setError] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // State for loading
+  const fileRef = useRef();
 
-    const handleFileChange = (event) => {
-        const selectedFile = event.target.files[0];
-        setFile(selectedFile);
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
 
-        // Reset preview visibility when a new file is uploaded
-        setShowPreview(false);
-    };
-
-    const handlePageChange = (event) => {
-        setPageNumber(event.target.value);
-    };
-
-    const handlePreviewClick = () => {
-      const previewUrl = URL.createObjectURL(file);
-      window.open(previewUrl, '_blank'); // This opens the PDF in a new browser window/tab
+    // Reset preview visibility when a new file is uploaded
+    setShowPreview(false);
   };
-  
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+  const handlePageChange = (event) => {
+    setPageNumber(event.target.value);
+  };
 
-        if (!file || !pageNumber) {
-            setError('Please upload a file and specify page numbers.');
-            return;
-        }
+  const handlePreviewClick = () => {
+    const previewUrl = URL.createObjectURL(file);
+    window.open(previewUrl, '_blank'); // This opens the PDF in a new browser window/tab
+  };
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('pageNumber', pageNumber);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-        try {
-            setError('');
-            const response = await axios.post('https://pdf-extractor-oe7w.onrender.com/api/pdf/extract', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                responseType: 'blob',
-            });
+    if (!file || !pageNumber) {
+      setError('Please upload a file and specify page numbers.');
+      return;
+    }
 
-            const fileBlob = new Blob([response.data], { type: 'application/pdf' });
-            const fileURL = URL.createObjectURL(fileBlob);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('pageNumber', pageNumber);
 
-            // Trigger the download programmatically
-            const link = document.createElement('a');
-            link.href = fileURL;
-            link.download = 'extracted-pages.pdf';
-            link.click();
+    setIsLoading(true); // Show spinner
 
-            // Clear the form fields after download starts
-            fileRef.current.value = '';
-            setPageNumber('');
-            setFile("")
-            setShowPreview(false); // Clear the preview after download
+    try {
+      setError('');
+      const response = await axios.post('https://pdf-extractor-oe7w.onrender.com/api/pdf/extract', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+      });
 
-        } catch (error) {
-            console.error('Error extracting pages:', error);
-            setError('Failed to extract pages. Please check your input and try again.');
-        }
-    };
+      const fileBlob = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(fileBlob);
 
-    return (
-        <div className="app-container">
-            <h1>PDF Page Extractor</h1>
-            <form onSubmit={handleSubmit} className="form-container">
+      // Trigger the download programmatically
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.download = 'extracted-pages.pdf';
+      link.click();
 
-              <div className='flex flex-row'>
+      // Clear the form fields after download starts
+      fileRef.current.value = '';
+      setPageNumber('');
+      setFile('');
+      setShowPreview(false); // Clear the preview after download
+    } catch (error) {
+      console.error('Error extracting pages:', error);
+      setError('Failed to extract pages. Please check your input and try again.');
+    } finally {
+      setIsLoading(false); // Hide spinner
+    }
+  };
 
-                    <div className="input-group">
-                          <label>
-                              Upload PDF:
-                              <input
-                                  ref={fileRef}
-                                  type="file"
-                                  accept="application/pdf" 
-                                  onChange={handleFileChange}
-                              />
-                          </label>
-                      </div>
+  return (
+    <div className="app-container">
+      <h1>PDF Page Extractor</h1>
+      <form onSubmit={handleSubmit} className="form-container">
+        <div className="flex flex-row">
+          <div className="input-group">
+            <label>
+              Upload PDF:
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
 
-                      {file && (
-                          <div className="preview-button-container">
-                              <button
-                                  type="button"
-                                  className="preview-button"
-                                  onClick={handlePreviewClick}
-                              >
-                                  Preview PDF
-                              </button>
-                          </div>
-                      )}
-
-              </div>
- 
-
-                <div className="input-group">
-                    
-                        <input
-                            type="text"
-                            value={pageNumber}
-                            onChange={handlePageChange}
-                            placeholder="Enter pages (e.g., 1,3 or 1-3,5)"
-                        />
-                    
-                </div>
-
-                <button type="submit" className="submit-button">Extract Pages</button>
-            </form>
-
-            {error && <p className="error-message">{error}</p>}
+          {file && (
+            <div className="preview-button-container">
+              <button type="button" className="preview-button" onClick={handlePreviewClick}>
+                Preview PDF
+              </button>
+            </div>
+          )}
         </div>
-    );
+
+        <div className="input-group">
+          <input
+            type="text"
+            value={pageNumber}
+            onChange={handlePageChange}
+            placeholder="Enter pages (e.g., 1,3 or 1-3,5)"
+          />
+        </div>
+
+        <button type="submit" className="submit-button">
+          Extract Pages
+        </button>
+      </form>
+
+      {error && <p className="error-message">{error}</p>}
+
+      {/* Show the spinner overlay when loading */}
+      {isLoading && <SpinnerOverlay />}
+    </div>
+  );
 };
 
 export default Main;
