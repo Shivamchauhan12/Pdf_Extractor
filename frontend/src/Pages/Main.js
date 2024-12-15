@@ -71,7 +71,7 @@ const Main = () => {
 
     return (
         <div className="app-container">
-            <h1>PDF Page Extractor</h1>
+            <h1>PDF Pages Extractor</h1>
             <form onSubmit={handleSubmit} className="form-container">
 
               <div className='flex flex-row'>
