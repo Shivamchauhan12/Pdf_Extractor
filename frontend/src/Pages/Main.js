@@ -41,7 +41,7 @@ const Main = () => {
 
         try {
             setError('');
-            const response = await axios.post('http://localhost:5000/upload', formData, {
+            const response = await axios.post('http://localhost:5000/api/pdf/extract', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
